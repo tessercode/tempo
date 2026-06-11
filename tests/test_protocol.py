@@ -1,14 +1,14 @@
 """
-Regression tests for TEMPO v1.1 protocol invariants.
+Regression tests for TEMPO protocol invariants.
 
 These tests encode the properties that must hold regardless of future
 implementation changes, ensuring protocol correctness is preserved.
 
 Protocol reference (WPM=20, T_u=60 ms):
-  T_thresh     = 2.17 × T_u = 130.2 ms   (channel assignment boundary)
-  σ (jitter)   = 0.838 × T_u ≈ 50.3 ms
-  ω (weight)   ~ U[0.8, 1.3]
-  r (dash)     ~ U[2.5, 4.5]
+  T_thresh     = 1.92 × T_u = 115.2 ms   (channel assignment boundary)
+  σ (jitter)   = 0.575 × T_u ≈ 34.5 ms
+  ω (weight)   ~ LogNormal(0.0360, 0.2446)
+  r (dash)     ~ LogNormal(1.2269, 0.2916)
   dot_ideal    = 1.0 × T_u    →  < T_thresh  → channel 0
   dash_ideal   = 3.0 × T_u    →  > T_thresh  → channel 1
 """
@@ -20,8 +20,8 @@ from tempo.dataset.generate_dataset import MORSE_TABLE, encode_word, split_chann
 
 WPM = 20
 T_U = 1200.0 / WPM       # 60.0 ms
-T_THRESH = 2.17 * T_U    # 130.2 ms
-SIGMA = 0.838 * T_U      # ~50.3 ms
+T_THRESH = 1.92 * T_U    # 115.2 ms
+SIGMA = 0.575 * T_U      # ~34.5 ms
 
 
 # ---------------------------------------------------------------------------
@@ -124,19 +124,27 @@ class TestInterCharacterGap:
 class TestNoiseBounds:
     N_TRIALS = 50
 
-    def test_weighting_omega_always_in_range(self):
-        """E with weighting only: t_spike = omega*T_u ∈ [0.8, 1.3]*T_u."""
+    def test_weighting_omega_strictly_positive(self):
+        """E with weighting only: t_spike = omega*T_u, omega ~ LogNormal > 0.
+
+        LogNormal is unbounded above, so the invariant is strict positivity
+        rather than a fixed range.
+        """
         rng = np.random.default_rng(0)
         for _ in range(self.N_TRIALS):
             ts = encode_word('E', T_U, weighting=True, rng=rng)[0][0]
-            assert 0.8 * T_U <= ts <= 1.3 * T_U + 1e-9
+            assert ts > 0
 
-    def test_dash_ratio_t_always_in_range(self):
-        """T with dash_ratio only: t_spike = r*T_u ∈ [2.5, 4.5]*T_u."""
+    def test_dash_ratio_t_strictly_positive(self):
+        """T with dash_ratio only: t_spike = r*T_u, r ~ LogNormal > 0.
+
+        LogNormal is unbounded above, so the invariant is strict positivity
+        rather than a fixed range.
+        """
         rng = np.random.default_rng(0)
         for _ in range(self.N_TRIALS):
             ts = encode_word('T', T_U, dash_ratio=True, rng=rng)[0][0]
-            assert 2.5 * T_U <= ts <= 4.5 * T_U + 1e-9
+            assert ts > 0
 
     def test_clamp_floor_never_violated_under_jitter(self):
         """No spike timestamp is ever below 0.1 * T_u, even under heavy jitter."""

@@ -12,8 +12,8 @@ from tempo.dataset.generate_dataset import generate_dataset, write_hdf5
 # ---------------------------------------------------------------------------
 WPM = 20
 T_U = 1200.0 / WPM          # 60.0 ms
-T_THRESH = 2.17 * T_U       # 130.2 ms — channel assignment boundary
-SIGMA = 0.838 * T_U         # ~50.3 ms — Gaussian jitter std dev
+T_THRESH = 1.92 * T_U       # 115.2 ms — channel assignment boundary
+SIGMA = 0.575 * T_U         # ~34.5 ms — Gaussian jitter std dev
 
 SIMPLE_WORDS = ['A', 'E', 'S', 'T', 'O']
 

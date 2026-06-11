@@ -115,7 +115,7 @@ class TestMetadataAttributes:
     def test_protocol_version(self, tmp_path):
         path, *_ = make_dataset_and_write(tmp_path)
         with h5py.File(str(path), 'r') as f:
-            assert f['metadata'].attrs['protocol_version'] == 'TEMPO v1.1'
+            assert f['metadata'].attrs['protocol_version'] == 'TEMPO'
 
     def test_wpm_stored_correctly(self, tmp_path):
         path, *_ = make_dataset_and_write(tmp_path)

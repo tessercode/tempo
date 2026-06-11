@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Luke Hindman
-"""TEMPO v1.1 Dataset Generator
+"""TEMPO Dataset Generator
 
 Generates dual-channel Morse code spike train datasets in HDF5 format
-following the TEMPO v1.1 encoding protocol.
+following the TEMPO encoding protocol.
 
 Usage:
     python -m tempo.dataset.generate_dataset wordlist.txt output.h5 [options]
@@ -35,14 +35,14 @@ MORSE_TABLE = {
 def encode_word(word, t_u, weighting=False, dash_ratio=False, jitter=False, rng=None):
     """Encode a single word into a dual-channel spike train.
 
-    Follows Algorithm 1 (TEMPO v1.1 Spike Train Generation) from the paper.
+    Follows Algorithm 1 (TEMPO Spike Train Generation) from the paper.
 
     Args:
         word: Uppercase string to encode.
         t_u: Base time unit in ms (1200 / WPM).
-        weighting: Enable systematic bias (omega ~ U[0.8, 1.3]).
-        dash_ratio: Enable dash ratio variation (r ~ U[2.5, 4.5]).
-        jitter: Enable Gaussian jitter (sigma = 0.838 * t_u).
+        weighting: Enable systematic bias (omega ~ LogNormal(0.0360, 0.2446)).
+        dash_ratio: Enable dash ratio variation (r ~ LogNormal(1.2269, 0.2916)).
+        jitter: Enable Gaussian jitter (sigma = 0.575 * t_u).
         rng: numpy RandomState for reproducibility.
 
     Returns:
@@ -51,10 +51,10 @@ def encode_word(word, t_u, weighting=False, dash_ratio=False, jitter=False, rng=
     if rng is None:
         rng = np.random.default_rng()
 
-    t_thresh = 2.17 * t_u
-    sigma = 0.838 * t_u if jitter else 0.0
-    omega = rng.uniform(0.8, 1.3) if weighting else 1.0
-    r = rng.uniform(2.5, 4.5) if dash_ratio else 3.0
+    t_thresh = 1.92 * t_u
+    sigma = 0.575 * t_u if jitter else 0.0
+    omega = rng.lognormal(0.0360, 0.2446) if weighting else 1.0
+    r = rng.lognormal(1.2269, 0.2916) if dash_ratio else 3.0
 
     t_current = 0.0
     spikes = []
@@ -205,7 +205,7 @@ def write_hdf5(filepath, all_dot_times, all_dash_times, labels, wpm, multiplier,
         f.create_dataset('labels', data=np.array(labels, dtype=object), dtype=str_dt)
 
         meta = f.create_group('metadata')
-        meta.attrs['protocol_version'] = 'TEMPO v1.1'
+        meta.attrs['protocol_version'] = 'TEMPO'
         meta.attrs['wpm'] = wpm
         meta.attrs['unit_ms'] = 1200.0 / wpm
         meta.attrs['multiplier'] = multiplier
@@ -221,7 +221,7 @@ def write_hdf5(filepath, all_dot_times, all_dash_times, labels, wpm, multiplier,
 
 def main():
     parser = argparse.ArgumentParser(
-        description='TEMPO v1.1 Dataset Generator — generate dual-channel '
+        description='TEMPO Dataset Generator — generate dual-channel '
                     'Morse spike train datasets in HDF5 format.',
     )
     parser.add_argument('wordlist', help='Path to wordlist file (whitespace-separated words)')
@@ -231,11 +231,11 @@ def main():
     parser.add_argument('--multiplier', type=int, default=1,
                         help='Number of spike trains per word (default: 1)')
     parser.add_argument('--weighting', action='store_true',
-                        help='Enable systematic bias (omega ~ U[0.8, 1.3])')
+                        help='Enable systematic bias (omega ~ LogNormal(0.0360, 0.2446))')
     parser.add_argument('--dash-ratio', action='store_true',
-                        help='Enable dash ratio variation (r ~ U[2.5, 4.5])')
+                        help='Enable dash ratio variation (r ~ LogNormal(1.2269, 0.2916))')
     parser.add_argument('--jitter', action='store_true',
-                        help='Enable Gaussian jitter (sigma = 0.838 * T_u)')
+                        help='Enable Gaussian jitter (sigma = 0.575 * T_u)')
     parser.add_argument('--all-noise', action='store_true',
                         help='Enable all noise sources')
     parser.add_argument('--seed', type=int, default=None,
@@ -281,7 +281,7 @@ def main():
     t_u = 1200.0 / args.wpm
     n_total = len(words) * args.multiplier
 
-    print(f"TEMPO v1.1 Dataset Generator", file=sys.stderr)
+    print(f"TEMPO Dataset Generator", file=sys.stderr)
     print(f"  Words: {len(words)} unique", file=sys.stderr)
     print(f"  WPM: {args.wpm} (T_u = {t_u:.1f} ms)", file=sys.stderr)
     print(f"  Multiplier: {args.multiplier} ({n_total} total samples)", file=sys.stderr)

@@ -118,9 +118,9 @@ python -m tempo.dataset.generate_dataset WORDLIST OUTPUT [options]
 |--------|---------|-------------|
 | `--wpm N` | 20 | Words per minute |
 | `--multiplier N` | 1 | Spike trains per word |
-| `--weighting` | off | Per-word speed bias ω ~ U[0.8, 1.3] |
-| `--dash-ratio` | off | Dash-to-dot ratio variation r ~ U[2.5, 4.5] |
-| `--jitter` | off | Gaussian timing jitter σ = 0.838 × T_u |
+| `--weighting` | off | Per-word speed bias ω ~ LogNormal(0.0360, 0.2446) |
+| `--dash-ratio` | off | Dash-to-dot ratio variation r ~ LogNormal(1.2269, 0.2916) |
+| `--jitter` | off | Gaussian timing jitter σ = 0.575 × T_u |
 | `--all-noise` | off | Enable all three noise sources |
 | `--seed N` | — | RNG seed for reproducibility |
 
@@ -151,7 +151,7 @@ all_dot, all_dash, labels = generate_dataset(
 
 | Notebook | Description |
 |----------|-------------|
-| `experiment1_ambiguity_calibration.ipynb` | Verifies that the jointly calibrated parameters σ = 0.838 × T_u and T_thresh = 2.17 × T_u produce balanced cross-channel misclassification within the 8–12% target range |
+| `experiment1_ambiguity_calibration.ipynb` | Verifies that the jointly calibrated parameters σ = 0.575 × T_u and T_thresh = 1.92 × T_u produce balanced cross-channel misclassification within the 8–12% target range |
 | `experiment2_temporal_irreducibility.ipynb` | Trains an SNN on standard TEMPO data and evaluates it under conditions that progressively remove temporal structure, confirming that >74% accuracy requires genuine temporal pattern learning |
 | `experiment3_stochastic_robustness.ipynb` | Compares models trained on deterministic vs. stochastic TEMPO data across a range of noise levels |
 | `experiment4_operator_parameter_validation.ipynb` | Validates TEMPO's stochastic noise parameters against authentic human-keyed Morse code recordings, measuring dot-dash ratio, fist weight, temporal jitter, and sending speed across multiple operators; label files for the analyzed recordings are in `notebooks/data/` |

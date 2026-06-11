@@ -21,7 +21,7 @@ from pathlib import Path
 
 BANNER = """\
 ╔══════════════════════════════════════════════════════════════╗
-║          TEMPO v1.1 — Regression Test Suite                  ║
+║          TEMPO — Regression Test Suite                       ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 

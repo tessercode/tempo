@@ -19,7 +19,16 @@ from tempo.dataset.generate_dataset import MORSE_TABLE, encode_word, split_chann
 
 WPM = 20
 T_U = 1200.0 / WPM       # 60.0 ms
-T_THRESH = 2.17 * T_U    # 130.2 ms
+T_THRESH = 1.92 * T_U    # 115.2 ms
+
+# LogNormal log-space parameters (must match generate_dataset.encode_word)
+MU_OMEGA, SIGMA_OMEGA = 0.0360, 0.2446
+MU_R, SIGMA_R = 1.2269, 0.2916
+
+
+def _lognormal_mean(mu, sigma):
+    """Analytic mean of LogNormal(mu, sigma): exp(mu + sigma^2 / 2)."""
+    return np.exp(mu + 0.5 * sigma ** 2)
 
 
 # ---------------------------------------------------------------------------
@@ -210,27 +219,43 @@ class TestNoiseFlags:
         noisy = encode_word('T', T_U, dash_ratio=True, rng=np.random.default_rng(0))
         assert base[0][0] != noisy[0][0]
 
-    def test_weighting_e_spike_in_omega_range(self):
-        """E='.' with only weighting: t_spike = omega * T_u ∈ [0.8, 1.3] * T_u."""
-        for seed in range(30):
-            rng = np.random.default_rng(seed)
-            spikes = encode_word('E', T_U, weighting=True, rng=rng)
-            ts = spikes[0][0]
-            assert 0.8 * T_U <= ts <= 1.3 * T_U + 1e-9, (
-                f"seed={seed}: E spike {ts:.3f} ms outside weighting range "
-                f"[{0.8*T_U:.1f}, {1.3*T_U:.1f}]"
-            )
+    def test_weighting_e_spike_is_positive_lognormal(self):
+        """E='.' with only weighting: t_spike = omega * T_u, omega ~ LogNormal.
 
-    def test_dash_ratio_t_spike_in_range(self):
-        """T='-' with only dash_ratio: t_spike = r * T_u ∈ [2.5, 4.5] * T_u."""
-        for seed in range(30):
-            rng = np.random.default_rng(seed)
-            spikes = encode_word('T', T_U, dash_ratio=True, rng=rng)
-            ts = spikes[0][0]
-            assert 2.5 * T_U <= ts <= 4.5 * T_U + 1e-9, (
-                f"seed={seed}: T spike {ts:.3f} ms outside dash_ratio range "
-                f"[{2.5*T_U:.1f}, {4.5*T_U:.1f}]"
-            )
+        LogNormal is strictly positive and unbounded above, so we check
+        positivity per draw and that the empirical mean of omega = t_spike / T_u
+        matches the analytic LogNormal mean.
+        """
+        rng = np.random.default_rng(0)
+        omegas = []
+        for _ in range(5000):
+            ts = encode_word('E', T_U, weighting=True, rng=rng)[0][0]
+            assert ts > 0, f"Non-positive E spike under weighting: {ts}"
+            omegas.append(ts / T_U)
+        empirical = float(np.mean(omegas))
+        expected = _lognormal_mean(MU_OMEGA, SIGMA_OMEGA)
+        assert abs(empirical - expected) < 0.03, (
+            f"omega mean {empirical:.4f} differs from LogNormal mean {expected:.4f}"
+        )
+
+    def test_dash_ratio_t_spike_is_positive_lognormal(self):
+        """T='-' with only dash_ratio: t_spike = r * T_u, r ~ LogNormal.
+
+        LogNormal is strictly positive and unbounded above, so we check
+        positivity per draw and that the empirical mean of r = t_spike / T_u
+        matches the analytic LogNormal mean.
+        """
+        rng = np.random.default_rng(0)
+        ratios = []
+        for _ in range(5000):
+            ts = encode_word('T', T_U, dash_ratio=True, rng=rng)[0][0]
+            assert ts > 0, f"Non-positive T spike under dash_ratio: {ts}"
+            ratios.append(ts / T_U)
+        empirical = float(np.mean(ratios))
+        expected = _lognormal_mean(MU_R, SIGMA_R)
+        assert abs(empirical - expected) < 0.1, (
+            f"r mean {empirical:.4f} differs from LogNormal mean {expected:.4f}"
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 
 class TEMPODataset(Dataset):
     """
-    Custom Loader for TEMPO v1.1 HDF5 files.
+    Custom Loader for TEMPO HDF5 files.
     Assumes HDF5 structure:
     - 'spikes/dot_channel': (N_samples,) variable-length float64 timestamps
     - 'spikes/dash_channel': (N_samples,) variable-length float64 timestamps
@@ -22,7 +22,7 @@ class TEMPODataset(Dataset):
     in sorted order for reproducibility.
 
     Args:
-        file_path: Path to a TEMPO v1.1 HDF5 file.
+        file_path: Path to a TEMPO HDF5 file.
         max_time_steps: Fixed time dimension length. If None, derived from
             the latest spike across all samples. Samples are zero-padded
             to this length; spikes beyond it are discarded.

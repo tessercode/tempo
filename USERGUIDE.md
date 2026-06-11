@@ -1,6 +1,6 @@
 # TEMPO User Guide
 
-**TEMPO v1.1** — A Stochastic Benchmarking Protocol for Evaluating Temporal Robustness in Spiking Neural Networks
+**TEMPO** — A Stochastic Benchmarking Protocol for Evaluating Temporal Robustness in Spiking Neural Networks
 
 This guide walks you through installing the `tempo` package, generating datasets, loading them into PyTorch / snnTorch, and training the reference TempoSNN model.
 
@@ -62,7 +62,7 @@ pip install -e .
 
 TEMPO encodes each character class (A–Z and 0–9) as a **dual-channel spike train** derived from International Morse code.  Each Morse mark (dot or dash) produces exactly one spike:
 
-- **Channel 0 (dot channel)**: spikes whose mark duration is shorter than the threshold `T_thresh = 2.17 × T_u`
+- **Channel 0 (dot channel)**: spikes whose mark duration is shorter than the threshold `T_thresh = 1.92 × T_u`
 - **Channel 1 (dash channel)**: spikes whose mark duration is equal to or longer than `T_thresh`
 
 The base time unit `T_u = 1200 / WPM` milliseconds sets the overall speed.  At the default `WPM = 20`, `T_u = 60 ms`.
@@ -82,11 +82,11 @@ Three optional noise sources model the variability present in human-operated Mor
 
 | Flag | Parameter | Description |
 |------|-----------|-------------|
-| `weighting` | ω ~ U[0.8, 1.3] | Per-word speed bias: a single scale factor applied to every timing interval in that word |
-| `dash_ratio` | r ~ U[2.5, 4.5] | Dash-to-dot ratio variation: replaces the standard 3× ratio with a random value |
-| `jitter` | σ = 0.838 × T_u | Gaussian timing noise: added independently to each mark and gap |
+| `weighting` | ω ~ LogNormal(0.0360, 0.2446) | Per-word speed bias: a single scale factor applied to every timing interval in that word |
+| `dash_ratio` | r ~ LogNormal(1.2269, 0.2916) | Dash-to-dot ratio variation: replaces the standard 3× ratio with a random value |
+| `jitter` | σ = 0.575 × T_u | Gaussian timing noise: added independently to each mark and gap |
 
-All three flags together produce the **full stochastic TEMPO v1.1 encoding**, which is the recommended setting for training temporally robust SNNs.
+All three flags together produce the **full stochastic TEMPO encoding**, which is the recommended setting for training temporally robust SNNs.
 
 ---
 
@@ -155,9 +155,9 @@ positional arguments:
 options:
   --wpm WPM             Words per minute (default: 20)
   --multiplier N        Spike trains per word (default: 1)
-  --weighting           Enable per-word speed bias (ω ~ U[0.8, 1.3])
-  --dash-ratio          Enable dash-to-dot ratio variation (r ~ U[2.5, 4.5])
-  --jitter              Enable Gaussian timing jitter (σ = 0.838 × T_u)
+  --weighting           Enable per-word speed bias (ω ~ LogNormal(0.0360, 0.2446))
+  --dash-ratio          Enable dash-to-dot ratio variation (r ~ LogNormal(1.2269, 0.2916))
+  --jitter              Enable Gaussian timing jitter (σ = 0.575 × T_u)
   --all-noise           Enable all three noise sources
   --seed SEED           Integer RNG seed for reproducibility
 ```
@@ -201,9 +201,9 @@ rng = np.random.default_rng(seed=42)
 spikes_noisy = encode_word(
     'HELLO',
     t_u=T_U,
-    weighting=True,    # ω ~ U[0.8, 1.3]
-    dash_ratio=True,   # r ~ U[2.5, 4.5]
-    jitter=True,       # σ = 0.838 × T_u
+    weighting=True,    # ω ~ LogNormal(0.0360, 0.2446)
+    dash_ratio=True,   # r ~ LogNormal(1.2269, 0.2916)
+    jitter=True,       # σ = 0.575 × T_u
     rng=rng,
 )
 dot_times, dash_times = split_channels(spikes_noisy)
@@ -267,7 +267,7 @@ TEMPO datasets are stored in HDF5 with the following structure:
     dash_channel  (N_samples,)  vlen float64  — dash spike timestamps in ms
 /labels           (N_samples,)  UTF-8 string  — class label (e.g. 'A', 'HELLO')
 /metadata/                      group          — dataset provenance
-    protocol_version  "TEMPO v1.1"
+    protocol_version  "TEMPO"
     wpm               int
     unit_ms           float  (= 1200 / wpm)
     multiplier        int
@@ -696,9 +696,9 @@ Encode a single uppercase word into a dual-channel spike train.
 |-----------|------|-------------|
 | `word` | `str` | Uppercase word (characters must be in `MORSE_TABLE`) |
 | `t_u` | `float` | Base time unit in ms (`= 1200 / WPM`) |
-| `weighting` | `bool` | Enable per-word speed bias ω ~ U[0.8, 1.3] |
-| `dash_ratio` | `bool` | Enable dash ratio variation r ~ U[2.5, 4.5] |
-| `jitter` | `bool` | Enable Gaussian jitter σ = 0.838 × T_u |
+| `weighting` | `bool` | Enable per-word speed bias ω ~ LogNormal(0.0360, 0.2446) |
+| `dash_ratio` | `bool` | Enable dash ratio variation r ~ LogNormal(1.2269, 0.2916) |
+| `jitter` | `bool` | Enable Gaussian jitter σ = 0.575 × T_u |
 | `rng` | `np.random.Generator` | NumPy RNG; created fresh if `None` |
 
 Returns `List[Tuple[float, int]]` — a list of `(timestamp_ms, channel)` pairs,
@@ -739,7 +739,7 @@ a `List[np.ndarray]` and `labels` is a `List[str]`.
 
 #### `write_hdf5(filepath, all_dot_times, all_dash_times, labels, wpm, multiplier, weighting, dash_ratio, jitter, seed, wordlist_path)`
 
-Write a dataset to a TEMPO v1.1 HDF5 file.  All parameters match the outputs
+Write a dataset to a TEMPO HDF5 file.  All parameters match the outputs
 and settings from `generate_dataset`.
 
 ---
@@ -760,7 +760,7 @@ print(MORSE_TABLE['O'])   # '---'
 
 #### `TEMPODataset(file_path, max_time_steps=None)`
 
-PyTorch `Dataset` that loads a TEMPO v1.1 HDF5 file.
+PyTorch `Dataset` that loads a TEMPO HDF5 file.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -787,9 +787,9 @@ and `[]` (scalar), respectively.
 | Symbol | Value | Meaning |
 |--------|-------|---------|
 | `T_u` | 60 ms | Base time unit |
-| `T_thresh` | 130.2 ms | Channel assignment threshold (2.17 × T_u) |
-| σ (jitter) | 50.3 ms | Gaussian jitter std dev (0.838 × T_u) |
-| ω (weighting) | U[0.8, 1.3] | Per-word speed bias |
-| r (dash_ratio) | U[2.5, 4.5] | Dash-to-dot duration ratio |
+| `T_thresh` | 115.2 ms | Channel assignment threshold (1.92 × T_u) |
+| σ (jitter) | 34.5 ms | Gaussian jitter std dev (0.575 × T_u) |
+| ω (weighting) | LogNormal(0.0360, 0.2446) | Per-word speed bias |
+| r (dash_ratio) | LogNormal(1.2269, 0.2916) | Dash-to-dot duration ratio |
 | Chance | 3.85% | 1/26 random baseline |
 | Count ceiling | 26.9% | 7/26 rate-code only baseline |
