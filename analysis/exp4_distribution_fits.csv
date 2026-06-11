@@ -1,0 +1,17 @@
+param,distribution,ks_stat,ks_pvalue,aic,is_best
+sigma_elem,lognorm,0.11622,0.6728,-46.49,False
+sigma_elem,gamma,0.08958,0.91008,-48.98,False
+sigma_elem,norm,0.10423,0.7911,-45.47,False
+sigma_elem,halfnorm,0.08519,0.93652,-56.3,True
+sigma_gap,lognorm,0.10159,0.81532,-44.51,False
+sigma_gap,gamma,0.0661,0.99451,-45.44,False
+sigma_gap,norm,0.1109,0.72643,-40.59,False
+sigma_gap,halfnorm,0.11616,0.67338,-47.62,True
+r,norm,0.24456,0.0,110254.2,False
+r,lognorm,0.1832,0.0,77249.35,True
+r,gamma,0.20155,0.0,85333.34,False
+r,uniform,0.8512,0.0,210186.33,False
+omega,norm,0.34765,0.0,53598.81,False
+omega,lognorm,0.28171,0.0,3227.73,True
+omega,uniform,0.86548,0.0,181367.05,False
+omega,beta,0.31141,0.0,19815.2,False
